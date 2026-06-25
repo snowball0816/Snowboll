@@ -48,13 +48,18 @@ export default function SnowballSimulator({ debts, baseResult, totalMinimums }: 
   }, [debts, baseResult])
 
   // Per-debt impact: compare payoff dates base vs with extra
-  const debtImpact = useMemo(() => {
+  type ImpactItem = {
+    id: string; name: string; baseMonths: number; newMonths: number
+    baseDate: Date; newDate: Date; monthsSaved: number
+    baseInterest: number; newInterest: number
+  }
+  const debtImpact = useMemo((): ImpactItem[] => {
     if (extra <= 0) return []
-    return debts.map(d => {
+    return debts.flatMap(d => {
       const baseEntry = baseResult.schedule.find(s => s.debtId === d.id)
       const newEntry = result.schedule.find(s => s.debtId === d.id)
-      if (!baseEntry || !newEntry) return null
-      return {
+      if (!baseEntry || !newEntry) return []
+      const item: ImpactItem = {
         id: d.id,
         name: `${d.entity} — ${d.name}`,
         baseMonths: baseEntry.monthsToPayoff,
@@ -65,7 +70,8 @@ export default function SnowballSimulator({ debts, baseResult, totalMinimums }: 
         baseInterest: baseEntry.totalInterest,
         newInterest: newEntry.totalInterest,
       }
-    }).filter(Boolean).filter(d => d!.monthsSaved > 0) as NonNullable<ReturnType<typeof debts.map>[0]>[]
+      return item.monthsSaved > 0 ? [item] : []
+    })
   }, [debts, extra, result, baseResult])
 
   return (
