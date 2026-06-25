@@ -47,9 +47,13 @@ function balanceAfterNPayments(
   if (n <= 0) return initialBalance
   const r = monthlyRate(annualEA)
   const C = frenchInstallment(initialBalance, annualEA, termMonths)
-  if (r === 0) return Math.max(0, Math.round(initialBalance - n * C))
-  const factor = Math.pow(1 + r, n)
-  return Math.max(0, Math.round(initialBalance * factor - C * (factor - 1) / r))
+  let balance = initialBalance
+  for (let i = 0; i < Math.min(n, termMonths); i++) {
+    const interest = balance * r
+    const principal = C - interest
+    balance = Math.max(0, balance - principal)
+  }
+  return Math.round(balance)
 }
 
 type FormValues = z.infer<typeof schema>

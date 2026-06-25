@@ -1,6 +1,6 @@
 import { Debt, Payment, CreditCardPurchase } from '@/types'
 
-export const MOCK_USER_ID = 'mock-user-001'
+export const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 export const mockDebts: Debt[] = [
   {
