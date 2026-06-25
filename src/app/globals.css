@@ -1,26 +1,90 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg-base:    #f0f4f8;
+  --bg-surface: #ffffff;
+  --bg-raised:  #f5f7fa;
+  --bg-hover:   #edf1f6;
+
+  /* Borders */
+  --border:       rgba(0,0,0,0.08);
+  --border-hover: rgba(0,0,0,0.15);
+
+  /* Mint green scale */
+  --mint:         #10b981;
+  --mint-dim:     rgba(16, 185, 129, 0.10);
+  --mint-border:  rgba(16, 185, 129, 0.25);
+  --mint-dark:    #059669;
+
+  /* Text */
+  --text-primary:   #111827;
+  --text-secondary: #4b5563;
+  --text-muted:     #9ca3af;
+
+  /* Semantic */
+  --red:    #ef4444;
+  --amber:  #f59e0b;
+  --sky:    #0ea5e9;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ── Base ──────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
 }
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── Utility classes used across components ────────────────── */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  transition: border-color 0.15s;
+}
+.card:hover { border-color: var(--border-hover); }
+
+.mint-badge {
+  background: var(--mint-dim);
+  color: var(--mint);
+  border: 1px solid var(--mint-border);
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  letter-spacing: 0.02em;
+}
+
+/* Stat number */
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Glow effect for primary elements */
+.mint-glow {
+  box-shadow: 0 0 0 1px var(--mint-border), 0 4px 24px rgba(45,212,160,0.12);
+}
+
+/* Smooth transitions */
+a, button { transition: all 0.15s ease; }
+
+/* Hover helpers usable in Server Components (no JS handlers needed) */
+.row-hover { background: transparent; transition: background 0.15s; }
+.row-hover:hover { background: var(--bg-raised); }
+
+.card-hover { border-color: var(--border); transition: border-color 0.15s; }
+.card-hover:hover { border-color: var(--border-hover); }

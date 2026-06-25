@@ -1,0 +1,17 @@
+{
+  "name": "Snowboll – Control de Deudas",
+  "short_name": "Snowboll",
+  "description": "Administra y elimina tus deudas con el método Bola de Nieve",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
