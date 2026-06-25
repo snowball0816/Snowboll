@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,23 +8,25 @@ import { z } from 'zod'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
+import { frenchInstallment, monthlyRate } from '@/lib/engines/calculations'
 
 const schema = z.object({
-  type:              z.enum(['credit_card', 'loan']),
-  name:              z.string().min(1, 'Requerido'),
-  entity:            z.string().min(1, 'Requerido'),
-  initial_balance:   z.coerce.number().min(0).optional(),
-  current_balance:   z.coerce.number().min(0).optional(),
-  interest_rate:     z.coerce.number().positive('Ingresa la tasa anual'),
-  monthly_payment:   z.coerce.number().min(0).optional(),
-  credit_limit:      z.coerce.number().optional(),
-  insurance_monthly: z.coerce.number().min(0).optional(),
-  loan_type:         z.string().optional(),
-  term_months:       z.coerce.number().optional(),
-  disbursement_date: z.string().optional(),
-  due_date:          z.string().optional(),
-  cut_date:          z.coerce.number().optional(),
-  payment_due_date:  z.coerce.number().optional(),
+  type:                      z.enum(['credit_card', 'loan']),
+  name:                      z.string().min(1, 'Requerido'),
+  entity:                    z.string().min(1, 'Requerido'),
+  initial_balance:           z.coerce.number().min(0).optional(),
+  current_balance:           z.coerce.number().min(0).optional(),
+  paid_installments_before:  z.coerce.number().min(0).optional(),
+  interest_rate:             z.coerce.number().positive('Ingresa la tasa anual'),
+  monthly_payment:           z.coerce.number().min(0).optional(),
+  credit_limit:              z.coerce.number().optional(),
+  insurance_monthly:         z.coerce.number().min(0).optional(),
+  loan_type:                 z.string().optional(),
+  term_months:               z.coerce.number().optional(),
+  disbursement_date:         z.string().optional(),
+  due_date:                  z.string().optional(),
+  cut_date:                  z.coerce.number().optional(),
+  payment_due_date:          z.coerce.number().optional(),
 }).superRefine((data, ctx) => {
   if (data.type === 'loan') {
     if (!data.initial_balance || data.initial_balance <= 0) {
@@ -35,6 +37,20 @@ const schema = z.object({
     }
   }
 })
+
+function balanceAfterNPayments(
+  initialBalance: number,
+  annualEA: number,
+  termMonths: number,
+  n: number,
+): number {
+  if (n <= 0) return initialBalance
+  const r = monthlyRate(annualEA)
+  const C = frenchInstallment(initialBalance, annualEA, termMonths)
+  if (r === 0) return Math.max(0, Math.round(initialBalance - n * C))
+  const factor = Math.pow(1 + r, n)
+  return Math.max(0, Math.round(initialBalance * factor - C * (factor - 1) / r))
+}
 
 type FormValues = z.infer<typeof schema>
 
@@ -56,23 +72,41 @@ export default function DebtForm({ debtId, initial }: { debtId?: string; initial
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { register, handleSubmit, watch, formState: { errors } } =
+  const { register, handleSubmit, watch, setValue, formState: { errors } } =
     useForm<FormValues, unknown, FormValues>({
       resolver: zodResolver(schema) as never,
       defaultValues: initial ?? { type: 'credit_card' },
     })
 
-  const debtType = watch('type')
+  const debtType           = watch('type')
+  const initialBalance     = watch('initial_balance')
+  const interestRate       = watch('interest_rate')
+  const termMonths         = watch('term_months')
+  const paidBefore         = watch('paid_installments_before')
+  const [autoCalc, setAutoCalc] = useState(false)
+
+  useEffect(() => {
+    const n  = Number(paidBefore)
+    const P  = Number(initialBalance)
+    const EA = Number(interestRate)
+    const T  = Number(termMonths)
+    if (n > 0 && P > 0 && EA > 0 && T > 0) {
+      setValue('current_balance', balanceAfterNPayments(P, EA, T, n))
+      setAutoCalc(true)
+    } else {
+      setAutoCalc(false)
+    }
+  }, [paidBefore, initialBalance, interestRate, termMonths, setValue])
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
     setError(null)
     try {
       const isCard = values.type === 'credit_card'
-      // For credit cards, omit financial fields — they're derived from purchases at read time.
-      // undefined values are stripped by JSON.stringify so the server won't overwrite existing data.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { paid_installments_before: _drop, ...rest } = values
       const payload = {
-        ...values,
+        ...rest,
         initial_balance:  isCard ? undefined : values.initial_balance,
         current_balance:  isCard ? undefined : values.current_balance,
         monthly_payment:  isCard ? undefined : (values.monthly_payment ?? 0),
@@ -113,12 +147,24 @@ export default function DebtForm({ debtId, initial }: { debtId?: string; initial
 
       <Section title="Datos financieros">
         {debtType === 'loan' ? (
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Saldo inicial" type="number" prefix="$" placeholder="0"
-              error={errors.initial_balance?.message} {...register('initial_balance')} />
-            <Input label="Saldo actual" type="number" prefix="$" placeholder="0"
-              error={errors.current_balance?.message} {...register('current_balance')} />
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Saldo inicial del crédito" type="number" prefix="$" placeholder="0"
+                error={errors.initial_balance?.message} {...register('initial_balance')} />
+              <Input label="Cuotas ya pagadas antes de registrar" type="number" placeholder="0"
+                hint="Déjalo en 0 si el crédito es nuevo"
+                {...register('paid_installments_before')} />
+            </div>
+            <div>
+              <Input label="Saldo actual" type="number" prefix="$" placeholder="0"
+                error={errors.current_balance?.message} {...register('current_balance')} />
+              {autoCalc && (
+                <p className="text-xs mt-1.5 px-1" style={{ color: 'var(--mint)' }}>
+                  ✓ Calculado automáticamente desde las cuotas pagadas
+                </p>
+              )}
+            </div>
+          </>
         ) : (
           <div className="rounded-xl px-4 py-3 text-sm"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
