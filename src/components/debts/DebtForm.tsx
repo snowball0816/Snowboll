@@ -191,7 +191,8 @@ export default function DebtForm({ debtId, initial }: { debtId?: string; initial
           <Input label="Tasa de interés anual" type="number" step="0.01" suffix="% EA"
             placeholder="24.00" error={errors.interest_rate?.message} {...register('interest_rate')} />
           {debtType === 'loan' ? (
-            <Input label="Cuota mensual" type="number" prefix="$" placeholder="0"
+            <Input label="Cuota del crédito (sin seguro)" type="number" prefix="$" placeholder="0"
+              hint="Solo la cuota del préstamo, sin incluir seguro"
               error={errors.monthly_payment?.message} {...register('monthly_payment')} />
           ) : (
             <div className="flex flex-col justify-end pb-0.5">
@@ -208,11 +209,20 @@ export default function DebtForm({ debtId, initial }: { debtId?: string; initial
             {...register('credit_limit')} />
         )}
         <Input
-          label="Seguro mensual (cuota de manejo, seguro de vida, etc.)"
+          label="Seguro / cuota de manejo mensual"
           type="number" prefix="$" placeholder="0"
-          hint="Monto fijo que se suma cada mes a tu cuota"
+          hint="Monto fijo adicional (seguro de vida, cuota de manejo, etc.)"
           {...register('insurance_monthly')}
         />
+        {debtType === 'loan' && (Number(watch('monthly_payment')) > 0 || Number(watch('insurance_monthly')) > 0) && (
+          <div className="flex justify-between items-center rounded-xl px-4 py-3 text-sm"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Pago total mensual</span>
+            <span className="font-bold" style={{ color: 'var(--mint)' }}>
+              $ {((Number(watch('monthly_payment')) || 0) + (Number(watch('insurance_monthly')) || 0)).toLocaleString('es-CO')}
+            </span>
+          </div>
+        )}
       </Section>
 
       {debtType === 'loan' && (
