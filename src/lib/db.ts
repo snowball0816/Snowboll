@@ -168,11 +168,20 @@ export async function createDebt(userId: string, body: Partial<Debt>): Promise<D
   }
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
-  const { data } = await supabase
+  const row = {
+    initial_balance: 0,
+    current_balance: 0,
+    monthly_payment: 0,
+    ...body,
+    user_id: userId,
+  }
+  const { data, error } = await supabase
     .from('debts')
-    .insert({ ...body, user_id: userId })
+    .insert(row)
     .select()
     .single()
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error('Insert did not return data')
   return data as Debt
 }
 

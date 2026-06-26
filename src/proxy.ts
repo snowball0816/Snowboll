@@ -4,7 +4,7 @@ import { verifySession, SESSION_COOKIE } from '@/lib/auth'
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth') || pathname.startsWith('/api/dev-reset')) {
+  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth') || pathname.startsWith('/api/dev-reset') || pathname.startsWith('/api/debug')) {
     return NextResponse.next()
   }
 
