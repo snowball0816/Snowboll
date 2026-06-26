@@ -11,7 +11,7 @@ export default async function DebtsPage() {
   const paid   = debts.filter((d) => d.status === 'paid')
 
   const totalBalance  = active.reduce((s, d) => s + d.current_balance, 0)
-  const totalMonthly  = active.reduce((s, d) => s + d.monthly_payment, 0)
+  const totalMonthly  = active.reduce((s, d) => s + d.monthly_payment + (d.insurance_monthly ?? 0), 0)
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
@@ -147,7 +147,7 @@ function DebtRow({ debt, order, last }: { debt: Debt; order?: number; last?: boo
         {/* Monthly */}
         <div className="text-right shrink-0 w-28">
           <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {formatCurrency(debt.monthly_payment)}<span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>/mes</span>
+            {formatCurrency(debt.monthly_payment + (debt.insurance_monthly ?? 0))}<span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>/mes</span>
           </p>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {formatCurrency(debt.current_balance)} restante
