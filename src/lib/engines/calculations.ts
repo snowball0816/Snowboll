@@ -81,8 +81,11 @@ export function buildAmortizationTable(
   annualEA: number,
   termMonths: number,
   insuranceMonthly = 0,
+  fixedPayment?: number,
 ): AmortizationRow[] {
-  const cuota = frenchInstallment(balance, annualEA, termMonths)
+  const cuota = fixedPayment && fixedPayment > 0
+    ? fixedPayment
+    : frenchInstallment(balance, annualEA, termMonths)
   const rows: AmortizationRow[] = []
   let remaining = balance
   const today = new Date()

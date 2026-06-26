@@ -53,7 +53,7 @@ export default async function DebtDetailPage({ params }: Params) {
 
   // Amortization table for loans
   const amortRows = !isCreditCard && debt.term_months
-    ? buildAmortizationTable(displayBalance, debt.interest_rate, isFinite(months) && months > 0 ? Math.ceil(months) : debt.term_months, insurance)
+    ? buildAmortizationTable(displayBalance, debt.interest_rate, isFinite(months) && months > 0 ? Math.ceil(months) : debt.term_months, insurance, debt.monthly_payment || undefined)
     : []
 
   // Credit card breakdown
