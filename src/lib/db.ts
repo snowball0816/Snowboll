@@ -168,13 +168,23 @@ export async function createDebt(userId: string, body: Partial<Debt>): Promise<D
   }
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
-  // Nullable constrained columns must be NULL (not 0) when not provided
-  const NULLABLE = ['cut_date','payment_due_date','credit_limit','term_months','disbursement_date','due_date','loan_type'] as const
-  const cleaned = Object.fromEntries(
-    Object.entries({ initial_balance: 0, current_balance: 0, monthly_payment: 0, insurance_monthly: 0, ...body })
-      .map(([k, v]) => [k, NULLABLE.includes(k as typeof NULLABLE[number]) && !v ? null : v])
-  )
-  const row = { ...cleaned, user_id: userId }
+  const n = (v: unknown) => (v && v !== 0 ? v : null)
+  const row = {
+    initial_balance:  0,
+    current_balance:  0,
+    monthly_payment:  0,
+    insurance_monthly: 0,
+    ...body,
+    user_id:          userId,
+    // Nullable columns with CHECK constraints must be NULL, never 0
+    cut_date:         n(body.cut_date),
+    payment_due_date: n(body.payment_due_date),
+    credit_limit:     n(body.credit_limit),
+    term_months:      n(body.term_months),
+    loan_type:        body.loan_type || null,
+    disbursement_date: body.disbursement_date || null,
+    due_date:         body.due_date || null,
+  }
   const { data, error } = await supabase
     .from('debts')
     .insert(row)
