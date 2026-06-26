@@ -109,11 +109,20 @@ export default function DebtForm({ debtId, initial }: { debtId?: string; initial
       const isCard = values.type === 'credit_card'
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { paid_installments_before: _drop, ...rest } = values
+      // Strip falsy values from optional constrained columns so they arrive as null, not 0
+      const nullIfEmpty = (v: number | undefined) => (v && v > 0 ? v : undefined)
       const payload = {
         ...rest,
         initial_balance:  isCard ? undefined : values.initial_balance,
         current_balance:  isCard ? undefined : values.current_balance,
         monthly_payment:  isCard ? undefined : (values.monthly_payment ?? 0),
+        cut_date:         nullIfEmpty(values.cut_date),
+        payment_due_date: nullIfEmpty(values.payment_due_date),
+        credit_limit:     nullIfEmpty(values.credit_limit),
+        term_months:      nullIfEmpty(values.term_months),
+        loan_type:        values.loan_type || undefined,
+        disbursement_date: values.disbursement_date || undefined,
+        due_date:         values.due_date || undefined,
       }
       const res = await fetch(debtId ? `/api/debts/${debtId}` : '/api/debts', {
         method: debtId ? 'PATCH' : 'POST',
