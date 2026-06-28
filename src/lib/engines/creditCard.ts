@@ -41,16 +41,14 @@ export function remainingInstallmentValue(p: CreditCardPurchase): number {
 }
 
 /**
- * Outstanding principal balance (present value of remaining installments).
- * For interest-bearing purchases this matches what the bank reports.
- * For interest-free purchases it equals the remaining payments sum.
+ * Outstanding principal balance using equal-principal (German amortization).
+ * Each installment repays total_amount/num_installments of capital.
+ * Matches what credit card banks typically report as saldo de capital.
  */
 export function outstandingPrincipal(p: CreditCardPurchase): number {
   const n = p.num_installments - p.paid_installments
   if (n <= 0) return 0
-  if (p.interest_free || !p.interest_rate) return n * p.installment_amount
-  const r = (1 + p.interest_rate / 100) ** (1 / 12) - 1
-  return p.installment_amount * (1 - (1 + r) ** -n) / r
+  return p.total_amount * n / p.num_installments
 }
 
 /**
