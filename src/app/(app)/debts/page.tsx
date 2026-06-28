@@ -119,6 +119,16 @@ function DebtRow({ debt, order, last }: { debt: Debt; order?: number; last?: boo
             {debt.entity}
           </p>
           <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{debt.name}</p>
+          {debt.type === 'credit_card' && debt.payment_due_date && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              Pago límite día <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{debt.payment_due_date}</span>
+            </p>
+          )}
+          {debt.type === 'loan' && debt.due_date && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              Vence <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{new Date(debt.due_date).toLocaleDateString('es-CO', { year: 'numeric', month: 'short' })}</span>
+            </p>
+          )}
         </div>
 
         {/* Rate */}
