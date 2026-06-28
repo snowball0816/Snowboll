@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CreditCardPurchase } from '@/types'
 import { formatCurrency, formatDateShort } from '@/lib/utils'
-import { purchaseProgress, remainingInstallmentValue, outstandingPrincipal } from '@/lib/engines/creditCard'
+import { purchaseProgress, remainingInstallmentValue, outstandingPrincipal, currentInstallment } from '@/lib/engines/creditCard'
 import { Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import EditPurchaseModal from './EditPurchaseModal'
 import PurchaseAbonoModal from './PurchaseAbonoModal'
@@ -112,11 +112,12 @@ function PurchaseRow({
   onDelete: (p: CreditCardPurchase) => Promise<void>
   readonly?: boolean
 }) {
-  const isInstallment = p.num_installments > 1
-  const progress      = purchaseProgress(p)
-  const remaining     = remainingInstallmentValue(p)
-  const principal     = outstandingPrincipal(p)
-  const isLoading     = loadingId === p.id
+  const isInstallment  = p.num_installments > 1
+  const progress       = purchaseProgress(p)
+  const remaining      = remainingInstallmentValue(p)
+  const principal      = outstandingPrincipal(p)
+  const monthlyAmount  = currentInstallment(p)
+  const isLoading      = loadingId === p.id
 
   type BadgeStyle = { label: string; color: string; bg: string }
   const badge: BadgeStyle = p.status === 'paid'
@@ -152,7 +153,7 @@ function PurchaseRow({
           {isInstallment ? (
             <>
               <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                {formatCurrency(p.installment_amount)}
+                {formatCurrency(monthlyAmount)}
                 <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>/mes</span>
               </p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -194,7 +195,7 @@ function PurchaseRow({
             <StatItem label="Total compra" value={formatCurrency(p.total_amount)} />
             {isInstallment && (
               <>
-                <StatItem label="Cuota mensual" value={formatCurrency(p.installment_amount)} />
+                <StatItem label="Cuota mensual" value={formatCurrency(monthlyAmount)} />
                 <StatItem label="Cuotas pagadas" value={`${p.paid_installments} de ${p.num_installments}`} />
                 <StatItem label="Saldo restante" value={formatCurrency(principal)} />
               </>

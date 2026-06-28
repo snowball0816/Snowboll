@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CreditCardPurchase } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { currentInstallment } from '@/lib/engines/creditCard'
 import { Card } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import { Banknote, X, Minus, Plus } from 'lucide-react'
@@ -21,7 +22,8 @@ export default function PurchaseAbonoModal({ purchase: p, debtId }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   const remaining = p.num_installments - p.paid_installments
-  const totalAbono = cuotas * p.installment_amount
+  const cuotaActual = currentInstallment(p)
+  const totalAbono = cuotas * cuotaActual
 
   function increment() { setCuotas(c => Math.min(c + 1, remaining)) }
   function decrement() { setCuotas(c => Math.max(c - 1, 1)) }
@@ -79,7 +81,7 @@ export default function PurchaseAbonoModal({ purchase: p, debtId }: Props) {
                 {p.description}
               </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {formatCurrency(p.installment_amount)}/cuota · {remaining} restante{remaining !== 1 ? 's' : ''}
+                {formatCurrency(cuotaActual)}/cuota · {remaining} restante{remaining !== 1 ? 's' : ''}
               </p>
             </div>
 

@@ -1,4 +1,5 @@
 import { Debt, CreditCardPurchase } from '@/types'
+import { currentInstallment } from './creditCard'
 
 /**
  * Monthly effective rate from annual EA rate.
@@ -148,7 +149,7 @@ export function payoffDate(monthsFromNow: number): Date {
 export function calcCardMonthlyPayment(purchases: CreditCardPurchase[]): number {
   return purchases
     .filter((p) => p.status === 'active' && p.paid_installments < p.num_installments)
-    .reduce((sum, p) => sum + p.installment_amount, 0)
+    .reduce((sum, p) => sum + currentInstallment(p), 0)
 }
 
 /**

@@ -1,16 +1,12 @@
 import { CreditCardPurchase, Debt } from '@/types'
-import { calcCardMonthlyPayment } from './calculations'
 
-/**
- * Monthly payment due for a credit card = sum of installment_amount
- * for all active purchases with remaining installments.
- * Works for 1-cuota sin interés, N-cuotas sin interés, and N-cuotas con interés.
- */
 export function monthlyCardObligation(
   _card: Debt,
   purchases: CreditCardPurchase[],
 ): number {
-  return calcCardMonthlyPayment(purchases)
+  return purchases
+    .filter((p) => p.status === 'active' && p.paid_installments < p.num_installments)
+    .reduce((sum, p) => sum + currentInstallment(p), 0)
 }
 
 /**
@@ -49,6 +45,21 @@ export function outstandingPrincipal(p: CreditCardPurchase): number {
   const n = p.num_installments - p.paid_installments
   if (n <= 0) return 0
   return p.total_amount * n / p.num_installments
+}
+
+/**
+ * Current month's installment under equal-principal (German) amortization:
+ * fixed capital portion + interest on outstanding balance.
+ * For interest-free purchases returns the stored installment_amount.
+ */
+export function currentInstallment(p: CreditCardPurchase): number {
+  if (p.interest_free || !p.interest_rate || p.num_installments <= 1) {
+    return p.installment_amount
+  }
+  const capitalPerMonth = p.total_amount / p.num_installments
+  const balance = outstandingPrincipal(p)
+  const r = (1 + p.interest_rate / 100) ** (1 / 12) - 1
+  return capitalPerMonth + balance * r
 }
 
 /**
