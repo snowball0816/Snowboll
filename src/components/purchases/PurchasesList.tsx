@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CreditCardPurchase } from '@/types'
 import { formatCurrency, formatDateShort } from '@/lib/utils'
-import { purchaseProgress, remainingInstallmentValue } from '@/lib/engines/creditCard'
+import { purchaseProgress, remainingInstallmentValue, outstandingPrincipal } from '@/lib/engines/creditCard'
 import { Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import EditPurchaseModal from './EditPurchaseModal'
 import PurchaseAbonoModal from './PurchaseAbonoModal'
@@ -115,6 +115,7 @@ function PurchaseRow({
   const isInstallment = p.num_installments > 1
   const progress      = purchaseProgress(p)
   const remaining     = remainingInstallmentValue(p)
+  const principal     = outstandingPrincipal(p)
   const isLoading     = loadingId === p.id
 
   type BadgeStyle = { label: string; color: string; bg: string }
@@ -155,7 +156,7 @@ function PurchaseRow({
                 <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>/mes</span>
               </p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {formatCurrency(remaining)} restante
+                {formatCurrency(principal)} restante
               </p>
             </>
           ) : (
@@ -195,7 +196,7 @@ function PurchaseRow({
               <>
                 <StatItem label="Cuota mensual" value={formatCurrency(p.installment_amount)} />
                 <StatItem label="Cuotas pagadas" value={`${p.paid_installments} de ${p.num_installments}`} />
-                <StatItem label="Saldo restante" value={formatCurrency(remaining)} />
+                <StatItem label="Saldo restante" value={formatCurrency(principal)} />
               </>
             )}
             {!p.interest_free && p.num_installments > 1 && (
@@ -207,10 +208,10 @@ function PurchaseRow({
                 value={`${(((1 + p.interest_rate / 100) ** (1 / 12) - 1) * 100).toFixed(4)}% MV`}
               />
             )}
-            {!p.interest_free && p.num_installments > 1 && p.interest_rate != null && remaining > 0 && (
+            {!p.interest_free && p.num_installments > 1 && p.interest_rate != null && principal > 0 && (
               <StatItem
                 label="Interés del mes"
-                value={formatCurrency(remaining * (((1 + p.interest_rate / 100) ** (1 / 12) - 1)))}
+                value={formatCurrency(principal * ((1 + p.interest_rate / 100) ** (1 / 12) - 1))}
               />
             )}
             {p.notes && <StatItem label="Nota" value={p.notes} />}
