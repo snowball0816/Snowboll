@@ -207,6 +207,12 @@ function PurchaseRow({
                 value={`${(((1 + p.interest_rate / 100) ** (1 / 12) - 1) * 100).toFixed(4)}% MV`}
               />
             )}
+            {!p.interest_free && p.num_installments > 1 && p.interest_rate != null && remaining > 0 && (
+              <StatItem
+                label="Interés del mes"
+                value={formatCurrency(remaining * (((1 + p.interest_rate / 100) ** (1 / 12) - 1)))}
+              />
+            )}
             {p.notes && <StatItem label="Nota" value={p.notes} />}
           </div>
 
