@@ -11,7 +11,6 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Pencil, X } from 'lucide-react'
-import { installmentWithInterest } from '@/lib/engines/calculations'
 
 const schema = z.object({
   description:       z.string().min(1, 'Requerido'),
@@ -62,6 +61,7 @@ export default function EditPurchaseModal({
   const purchaseType = watch('purchase_type')
   const totalAmount  = watch('total_amount') || 0
   const numInstall   = watch('num_installments') || 1
+  const paidInstall  = watch('paid_installments') || 0
   const customRate   = watch('interest_rate')
 
   const mvToEA = (mv: number) => ((1 + mv / 100) ** 12 - 1) * 100
@@ -85,10 +85,13 @@ export default function EditPurchaseModal({
     }
   }
 
-  const installAmount =
-    numInstall > 1
-      ? installmentWithInterest(totalAmount, effectiveRate, numInstall)
-      : totalAmount
+  const monthlyRate         = effectiveRate > 0 ? (1 + effectiveRate / 100) ** (1 / 12) - 1 : 0
+  const capitalPerMonth     = numInstall > 1 ? totalAmount / numInstall : totalAmount
+  const remainingInstall    = numInstall - paidInstall
+  const outstandingNow      = totalAmount * remainingInstall / numInstall
+  const installAmount       = numInstall > 1 ? capitalPerMonth + outstandingNow * monthlyRate : totalAmount
+  const totalFutureInterest = capitalPerMonth * monthlyRate * (remainingInstall * (remainingInstall + 1) / 2)
+  const totalFuturePayments = outstandingNow + totalFutureInterest
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
@@ -214,13 +217,13 @@ export default function EditPurchaseModal({
                           <div className="flex justify-between text-xs">
                             <span style={{ color: 'var(--text-muted)' }}>Total a pagar</span>
                             <span style={{ color: 'var(--red)' }}>
-                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(installAmount * numInstall)}
+                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(totalFuturePayments)}
                             </span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span style={{ color: 'var(--text-muted)' }}>Interés total</span>
                             <span style={{ color: '#f97316' }}>
-                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(installAmount * numInstall - totalAmount)}
+                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(totalFutureInterest)}
                             </span>
                           </div>
                         </>

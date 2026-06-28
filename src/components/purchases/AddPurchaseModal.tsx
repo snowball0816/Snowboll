@@ -10,7 +10,6 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Plus, X } from 'lucide-react'
-import { installmentWithInterest } from '@/lib/engines/calculations'
 
 const schema = z.object({
   description:      z.string().min(1, 'Describe la compra'),
@@ -79,10 +78,17 @@ export default function AddPurchaseModal({ debtId, cardRate }: { debtId: string;
     }
   }
 
-  const installAmount =
-    numInstall > 1
-      ? installmentWithInterest(totalAmount, effectiveRate, numInstall)
-      : totalAmount
+  // German amortization: fixed capital + interest on outstanding balance
+  const monthlyRate    = effectiveRate > 0 ? (1 + effectiveRate / 100) ** (1 / 12) - 1 : 0
+  const capitalPerMonth = numInstall > 1 ? totalAmount / numInstall : totalAmount
+  const remaining       = numInstall - paidInstall
+  const outstandingNow  = totalAmount * remaining / numInstall
+  const installAmount   = numInstall > 1
+    ? capitalPerMonth + outstandingNow * monthlyRate
+    : totalAmount
+  // Total future interest: (totalAmount/n) * r * remaining*(remaining+1)/2
+  const totalFutureInterest = capitalPerMonth * monthlyRate * (remaining * (remaining + 1) / 2)
+  const totalFuturePayments = outstandingNow + totalFutureInterest
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
@@ -198,8 +204,8 @@ export default function AddPurchaseModal({ debtId, cardRate }: { debtId: string;
                     style={{ background: 'var(--mint-dim)', border: '1px solid rgba(16,185,129,0.2)' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Quedan por pagar</span>
                     <span className="font-semibold" style={{ color: 'var(--mint)' }}>
-                      {numInstall - paidInstall} de {numInstall} cuotas
-                      {installAmount > 0 && ` · ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format((numInstall - paidInstall) * installAmount)}`}
+                      {remaining} de {numInstall} cuotas
+                      {outstandingNow > 0 && ` · ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(outstandingNow)}`}
                     </span>
                   </div>
                 )}
@@ -218,13 +224,13 @@ export default function AddPurchaseModal({ debtId, cardRate }: { debtId: string;
                           <div className="flex justify-between text-xs">
                             <span style={{ color: 'var(--text-muted)' }}>Total a pagar (con interés)</span>
                             <span style={{ color: 'var(--red)' }}>
-                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(installAmount * numInstall)}
+                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(totalFuturePayments)}
                             </span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span style={{ color: 'var(--text-muted)' }}>Interés total</span>
                             <span style={{ color: '#f97316' }}>
-                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(installAmount * numInstall - totalAmount)}
+                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(totalFutureInterest)}
                             </span>
                           </div>
                         </>
