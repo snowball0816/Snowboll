@@ -41,8 +41,10 @@ export default function EditPurchaseModal({
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rateInputType, setRateInputType] = useState<'EA' | 'MV'>('EA')
+  const [mvRate, setMvRate] = useState('')
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } =
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } =
     useForm<FormValues, unknown, FormValues>({
       resolver: zodResolver(schema) as never,
       defaultValues: {
@@ -62,8 +64,26 @@ export default function EditPurchaseModal({
   const numInstall   = watch('num_installments') || 1
   const customRate   = watch('interest_rate')
 
+  const mvToEA = (mv: number) => ((1 + mv / 100) ** 12 - 1) * 100
+
+  const enteredEA =
+    rateInputType === 'MV' && mvRate !== ''
+      ? mvToEA(parseFloat(mvRate))
+      : customRate
+
   const effectiveRate =
-    purchaseType === 'installment_interest' ? (customRate ?? cardRate) : 0
+    purchaseType === 'installment_interest' ? (enteredEA ?? cardRate) : 0
+
+  function handleRateTypeToggle(type: 'EA' | 'MV') {
+    setRateInputType(type)
+    if (type === 'EA' && mvRate !== '') {
+      setValue('interest_rate', parseFloat(mvToEA(parseFloat(mvRate)).toFixed(4)))
+    }
+    if (type === 'MV' && customRate) {
+      setMvRate((((1 + customRate / 100) ** (1 / 12) - 1) * 100).toFixed(4))
+      setValue('interest_rate', undefined)
+    }
+  }
 
   const installAmount =
     numInstall > 1
@@ -76,6 +96,7 @@ export default function EditPurchaseModal({
     try {
       const interestFree = values.purchase_type === 'installment_free'
 
+      const finalEA = interestFree ? 0 : (enteredEA ?? cardRate)
       const payload = {
         debtId:             purchase.debt_id,
         description:        values.description,
@@ -85,7 +106,7 @@ export default function EditPurchaseModal({
         paid_installments:  values.paid_installments,
         installment_amount: installAmount,
         interest_free:      interestFree,
-        interest_rate:      interestFree ? 0 : (values.interest_rate ?? cardRate),
+        interest_rate:      finalEA,
         notes:              values.notes || undefined,
       }
 
@@ -208,14 +229,66 @@ export default function EditPurchaseModal({
                   )}
 
                   {purchaseType === 'installment_interest' && (
-                    <Input
-                      label="Tasa de interés anual"
-                      type="number"
-                      step="0.01"
-                      suffix="% EA"
-                      placeholder={String(cardRate)}
-                      {...register('interest_rate')}
-                    />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                          Tasa de interés
+                        </span>
+                        <div className="flex rounded-lg overflow-hidden border text-xs font-medium"
+                          style={{ borderColor: 'var(--border)' }}>
+                          {(['EA', 'MV'] as const).map(t => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => handleRateTypeToggle(t)}
+                              className="px-3 py-1 transition-colors"
+                              style={{
+                                background: rateInputType === t ? 'var(--mint)' : 'var(--bg-raised)',
+                                color: rateInputType === t ? '#fff' : 'var(--text-muted)',
+                              }}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {rateInputType === 'EA' ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          suffix="% EA"
+                          placeholder={String(cardRate)}
+                          {...register('interest_rate')}
+                        />
+                      ) : (
+                        <Input
+                          type="number"
+                          step="0.0001"
+                          suffix="% MV"
+                          placeholder={(((1 + cardRate / 100) ** (1 / 12) - 1) * 100).toFixed(4)}
+                          value={mvRate}
+                          onChange={e => setMvRate(e.target.value)}
+                        />
+                      )}
+
+                      {rateInputType === 'MV' && mvRate !== '' && !isNaN(parseFloat(mvRate)) && (
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          Equivale a{' '}
+                          <strong style={{ color: 'var(--mint)' }}>
+                            {mvToEA(parseFloat(mvRate)).toFixed(2)}% EA
+                          </strong>
+                        </p>
+                      )}
+                      {rateInputType === 'EA' && customRate != null && (
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          Equivale a{' '}
+                          <strong style={{ color: 'var(--mint)' }}>
+                            {(((1 + customRate / 100) ** (1 / 12) - 1) * 100).toFixed(4)}% MV
+                          </strong>
+                        </p>
+                      )}
+                    </div>
                   )}
               </>
 
