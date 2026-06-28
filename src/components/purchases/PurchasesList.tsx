@@ -201,6 +201,12 @@ function PurchaseRow({
             {!p.interest_free && p.num_installments > 1 && (
               <StatItem label="Tasa" value={`${p.interest_rate ?? '—'}% EA`} />
             )}
+            {!p.interest_free && p.num_installments > 1 && p.interest_rate != null && (
+              <StatItem
+                label="Tasa mes vencido"
+                value={`${(((1 + p.interest_rate / 100) ** (1 / 12) - 1) * 100).toFixed(2)}% MV`}
+              />
+            )}
             {p.notes && <StatItem label="Nota" value={p.notes} />}
           </div>
 
