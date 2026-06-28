@@ -22,7 +22,7 @@ export async function getDebts(_userId: string): Promise<Debt[]> {
       if (dp.length === 0) return d
       const monthly  = calcCardMonthlyPayment(dp)
       const balance  = totalOutstandingPurchases(dp)
-      const initial  = dp.reduce((s, p) => s + p.num_installments * p.installment_amount, 0)
+      const initial  = dp.reduce((s, p) => s + p.total_amount, 0)
       return {
         ...d,
         monthly_payment:  monthly,
@@ -59,7 +59,7 @@ export async function getDebts(_userId: string): Promise<Debt[]> {
       if (dp.length === 0) return d
       const monthly = calcCardMonthlyPayment(dp)
       const balance = totalOutstandingPurchases(dp)
-      const initial = dp.reduce((s, p) => s + p.num_installments * p.installment_amount, 0)
+      const initial = dp.reduce((s, p) => s + p.total_amount, 0)
       return {
         ...d,
         monthly_payment: monthly,
@@ -93,7 +93,7 @@ export async function getDebtWithPayments(
           ...enriched,
           monthly_payment: calcCardMonthlyPayment(dp),
           current_balance: totalOutstandingPurchases(dp),
-          initial_balance: dp.reduce((s, p) => s + p.num_installments * p.installment_amount, 0) || debt.initial_balance,
+          initial_balance: dp.reduce((s, p) => s + p.total_amount, 0) || debt.initial_balance,
         }
       }
     }
@@ -120,7 +120,7 @@ export async function getDebtWithPayments(
         ...debt,
         monthly_payment: calcCardMonthlyPayment(dp),
         current_balance: totalOutstandingPurchases(dp),
-        initial_balance: dp.reduce((s, p) => s + p.num_installments * p.installment_amount, 0) || debt.initial_balance,
+        initial_balance: dp.reduce((s, p) => s + p.total_amount, 0) || debt.initial_balance,
       }
     }
   }

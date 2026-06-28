@@ -10,12 +10,12 @@ export function monthlyCardObligation(
 }
 
 /**
- * Sum of active monthly installments (cuotas a >1 mes).
+ * Sum of active monthly installments (cuotas a >1 mes) — current month's amount.
  */
 export function totalInstallmentPayment(purchases: CreditCardPurchase[]): number {
   return purchases
     .filter((p) => p.status === 'active' && p.num_installments > 1 && p.paid_installments < p.num_installments)
-    .reduce((s, p) => s + p.installment_amount, 0)
+    .reduce((s, p) => s + currentInstallment(p), 0)
 }
 
 /**
@@ -28,12 +28,10 @@ export function revolvingBalance(purchases: CreditCardPurchase[]): number {
 }
 
 /**
- * Remaining value to pay on a purchase (total future payments).
- * Used for monthly obligation totals.
+ * Total remaining capital to pay on a purchase (outstanding principal).
  */
 export function remainingInstallmentValue(p: CreditCardPurchase): number {
-  const remaining = p.num_installments - p.paid_installments
-  return remaining * p.installment_amount
+  return outstandingPrincipal(p)
 }
 
 /**
@@ -68,7 +66,7 @@ export function currentInstallment(p: CreditCardPurchase): number {
 export function totalOutstandingPurchases(purchases: CreditCardPurchase[]): number {
   return purchases
     .filter((p) => p.status === 'active')
-    .reduce((s, p) => s + remainingInstallmentValue(p), 0)
+    .reduce((s, p) => s + outstandingPrincipal(p), 0)
 }
 
 /**

@@ -141,8 +141,8 @@ export function payoffDate(monthsFromNow: number): Date {
 
 /**
  * Total monthly obligation for a credit card based on active purchases.
- * - Cuotas diferidas sin interés: installment_amount fijo
- * - Cuotas con interés: installment_amount calculado con Método Francés
+ * - Cuotas sin interés: installment_amount = total / n
+ * - Cuotas con interés: currentInstallment() = capital fijo + interés sobre saldo (método alemán)
  * - 1 cuota sin interés: pago total ese mes
  * Falls back to 0 if no active purchases (caller should use stored minimum).
  */
